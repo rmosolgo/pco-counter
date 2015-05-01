@@ -27,17 +27,17 @@ function hasApp(value, app) {
 }
 
 function getCounts(people) {
-  var apps = {Total: 0, People: 0}
+  var apps = {TotalMentions: 0, Conversations: 0}
 
   for (id in people) {
-    apps.People += 1
+    apps.Conversations += 1
     var personValue = people[id]
     for (name in APPS) {
       var appValue = APPS[name]
       if (hasApp(personValue, appValue)) {
         apps[name] ? null : (apps[name] = 0)
         apps[name] += 1
-        apps.Total += 1
+        apps.TotalMentions += 1
       }
     }
   }
@@ -68,7 +68,7 @@ var App = React.createClass({
 var Totals = React.createClass({
   getInitialState() {
     return {
-      apps: {}
+      apps: {Conversations: "..."}
     }
   },
 
@@ -84,12 +84,12 @@ var Totals = React.createClass({
   render() {
     var apps = []
     for (name in this.state.apps) {
-      if (["People"].indexOf(name) === -1) {
+      if (["Conversations"].indexOf(name) === -1) {
         apps.push(<AppTotal
           key={name}
           name={name}
           value={this.state.apps[name]}
-          total={this.state.apps.Total} />)
+          total={this.state.apps.TotalMentions} />)
       }
     }
 
@@ -97,7 +97,7 @@ var Totals = React.createClass({
 
     return (
       <div style={{margin: "5px 20px"}}>
-        <h3>{this.state.apps.People} People </h3>
+        <h3>{this.state.apps.Conversations} Conversations</h3>
         <ul className='unstyled'>
           {apps}
         </ul>
