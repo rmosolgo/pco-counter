@@ -1,0 +1,251 @@
+<html>
+  <head>
+    <title>PCO Counter</title>
+    <script src="/JSXTransformer.js"></script>
+    <script src="/react.js"></script>
+    <script src="/firebase.js"></script>
+    <link rel="stylesheet" href="/skyblue.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+  </head>
+  <body>
+    <div id='app'></div>
+<script type='text/jsx;harmony=true'>
+var APPS = {
+  CheckIns: 1,
+  Registrations: 2,
+  People: 3,
+  Services: 4,
+  Giving: 5,
+  Resources: 6,
+  AlreadyServices: 7,
+}
+
+React.initializeTouchEvents()
+
+function hasApp(value, app) {
+  return value >> app & 0x01
+}
+
+function getCounts(people) {
+  var apps = {Total: 0, People: 0}
+
+  for (id in people) {
+    apps.People += 1
+    var personValue = people[id]
+    for (name in APPS) {
+      var appValue = APPS[name]
+      if (hasApp(personValue, appValue)) {
+        apps[name] ? null : (apps[name] = 0)
+        apps[name] += 1
+        apps.Total += 1
+      }
+    }
+  }
+  return apps
+}
+
+var App = React.createClass({
+  getInitialState() {
+    return {
+      showingForm: true,
+      peopleRef: new Firebase('https://pco-counter.firebaseio.com/people'),
+    }
+  },
+
+  render() {
+    if (this.state.showingForm) {
+      return <PersonForm people={this.state.peopleRef} onResultsClick={this.handleToggleForm}/>
+    } else {
+      return <Totals people={this.state.peopleRef} onFormClick={this.handleToggleForm}/>
+    }
+  },
+
+  handleToggleForm() {
+    this.setState({showingForm: !this.state.showingForm})
+  },
+})
+
+var Totals = React.createClass({
+  getInitialState() {
+    return {
+      apps: {}
+    }
+  },
+
+  componentDidMount() {
+    var apps = {Total: 0}
+    var _this = this
+    this.props.people.once("value", function(snapshot) {
+      var people = snapshot.val()
+      _this.setState({apps: getCounts(people)})
+    })
+  },
+
+  render() {
+    var apps = []
+    for (name in this.state.apps) {
+      if (["People"].indexOf(name) === -1) {
+        apps.push(<AppTotal
+          key={name}
+          name={name}
+          value={this.state.apps[name]}
+          total={this.state.apps.Total} />)
+      }
+    }
+
+    apps.sort(function(a, b) { return a.props.value < b.props.value ? 1 : -1})
+
+    return (
+      <div style={{margin: "5px 20px"}}>
+        <h3>{this.state.apps.People} People </h3>
+        <ul className='unstyled'>
+          {apps}
+        </ul>
+        <p>
+          <a
+            className='btn btn-dark'
+            onClick={this.props.onFormClick}
+          >
+            Form
+          </a>
+        </p>
+      </div>
+    )
+  }
+})
+
+var AppTotal = React.createClass({
+  render() {
+    var width = (this.props.value / (this.props.total * 1.0)) * 100
+    return (
+      <li>
+        <p style={{margin: "8px 0px", textAlign: "center", background: "linear-gradient(to right, #C7DDF0 " + width + "%, #FbFbFb "+ width + "%)"}}>
+          {this.props.name} ({this.props.value}, {Math.round(width)}%)
+        </p>
+      </li>
+    )
+  }
+})
+
+var PersonForm = React.createClass({
+  getInitialState() {
+    return {
+      value: 0,
+    }
+  },
+
+  hasApp(app) {
+    return hasApp(this.state.value, app)
+  },
+
+  render() {
+    return (
+      <div style={{margin: "10px auto"}}>
+        <h3 style={{margin: "5px 20px"}}>Talked about?</h3>
+          <AppButton
+            checked={this.hasApp(APPS.CheckIns)}
+            onClick={this.handleToggleApp(APPS.CheckIns)}
+          >
+            Check-Ins
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.Registrations)}
+            onClick={this.handleToggleApp(APPS.Registrations)}
+          >
+            Registrations
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.People)}
+            onClick={this.handleToggleApp(APPS.People)}
+          >
+            People
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.Services)}
+            onClick={this.handleToggleApp(APPS.Services)}
+          >
+            Services
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.Giving)}
+            onClick={this.handleToggleApp(APPS.Giving)}
+          >
+            Giving
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.Resources)}
+            onClick={this.handleToggleApp(APPS.Resources)}
+          >
+            Resources
+          </AppButton>
+          <AppButton
+            checked={this.hasApp(APPS.AlreadyServices)}
+            onClick={this.handleToggleApp(APPS.AlreadyServices)}
+          >
+            Already Services User
+          </AppButton>
+          <p>
+            <a
+              className='btn btn-success'
+              onClick={this.handleSave}
+              style={{margin: 20, padding: "5px 10px"}}
+            >
+              {this.state.saving ? "Saving..." : "Save"}
+            </a>
+            <a
+              className='btn btn-dark float-right'
+              style={{margin: 20, padding: "5px 10px"}}
+              onClick={this.props.onResultsClick}
+            >
+              Results
+            </a>
+          </p>
+      </div>
+    )
+  },
+
+  handleToggleApp: function(app) {
+    return this.toggleApp.bind(null, app)
+  },
+
+  toggleApp: function(app, ev) {
+    ev.preventDefault()
+    var newValue;
+    var appValue = 1 << app
+    if (this.hasApp(app)) {
+      newValue = this.state.value - appValue
+    } else {
+      newValue = this.state.value + appValue
+    }
+    this.setState({value: newValue})
+  },
+
+  handleSave: function(ev) {
+    if (this.state.saving || this.state.value === 0) { return }
+
+    var _this = this
+    this.setState({saving: true})
+    this.props.people.push(this.state.value, function() {
+      _this.setState({value: 0, saving: false})
+    })
+  }
+})
+
+var AppButton = React.createClass({
+  render() {
+    return (
+      <div onClick={this.props.onClick} onTouchStart={this.props.onClick}>
+        <h4
+          className={'btn ' + (this.props.checked ? '' : 'btn-light')}
+          style={{width: "90%", padding: '5px 10px', margin: "5px 20px"}}
+        >
+          {this.props.children}
+        </h4>
+      </div>
+    )
+  },
+})
+React.render(<App />, document.getElementById('app'))
+</script>
+  </body>
+</html>
