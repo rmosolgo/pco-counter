@@ -2,7 +2,7 @@
 
 This app was made to track what we talked about at Orange 2015.
 
-![app-pages](https://cloud.githubusercontent.com/assets/2231765/7443082/5e3bd202-f0e7-11e4-97fc-d391bacc7ef6.png)
+![counter](https://cloud.githubusercontent.com/assets/2231765/7443103/3a8ecd5e-f0e8-11e4-8385-67ec13e4aeb0.gif)
 
 
 - On the __form page__, click on topics that you talked about with someone, then save
